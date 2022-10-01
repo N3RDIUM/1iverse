@@ -7,16 +7,16 @@ if not glfw.init():
     raise Exception("glfw can not be initialized!")
 
 from player import Player
-from particle import Particle
+from particle import ParticleSystem, Particle
 
 window = glfw.create_window(800, 500, "1inverse", None, None)
 glfw.make_context_current(window)
 
 player = Player(window)
-particles = []
+particles = ParticleSystem()
 for i in range(1200):
-    particles.append(Particle({
-            "position": [random.random() * 20 - 10 for i in range(3)],
+    particles.add(Particle({
+            "position": [random.random() * 20 - 10, random.random() * 2 - 1, random.random() * 20 - 10],
         }, window))
 
 def get_window_size():
@@ -43,9 +43,6 @@ while not glfw.window_should_close(window):
     glClearColor(0.5, 0.7, 1, 1.0)
 
     player.update()
-    
-    for particle in particles:
-        particle.update()
-        particle.draw()
+    particles.draw()
     
 glfw.terminate()

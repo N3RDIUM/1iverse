@@ -2,7 +2,9 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 import numpy as np
+import threading
 import random
+import time
 
 import math
 def convert_K_to_RGB(colour_temperature):
@@ -71,10 +73,11 @@ state_template = {
     "acceleration": np.array([0, 0, 0], dtype=np.float32),
     "mass": 0.0,
     "drag": 0.98,
-    "temperature": -100.0,
+    "temperature": 1000.0,
 }
 
 sphere = gluNewQuadric()
+
 
 class Particle:
     """
@@ -89,7 +92,7 @@ class Particle:
         self.state["position"] += self.state["velocity"]
         self.state["velocity"] *= self.state["drag"]
 
-        self.state["velocity"] += [random.uniform(-0.00001, 0.00001) * (self.state["temperature"] + 273.5) for i in range(3)]
+        self.state["velocity"] += np.array([random.uniform(-0.00001, 0.00001) * (self.state["temperature"] + 273.5) for i in range(3)])
         self.state["temperature"] *= 0.999 + random.uniform(-0.0001, 0.0001)
 
     def draw(self):
@@ -103,7 +106,10 @@ class Particle:
         if b > 255:
             b = 255
         glColor3f(r / 256, g / 256, b / 256)
-        gluSphere(sphere, self.state["radius"], 4, 4)
+        glPointSize(8)
+        glBegin(GL_POINTS)
+        glVertex3f(0, 0, 0)
+        glEnd()
         glPopMatrix()
 
     def __repr__(self):
@@ -117,3 +123,31 @@ class Particle:
 
     def __hash__(self):
         return hash(self.state)
+
+class ParticleSystem:
+    """
+    A particle system is a collection of particles
+    """
+    def __init__(self, particles=[]):
+        self.particles = particles
+        self.thread = threading.Thread(target=self._update, daemon=True)
+        self.thread.start()
+    
+    def add(self, particle):
+        self.particles.append(particle)
+
+    def remove(self, particle):
+        self.particles.remove(particle)
+
+    def _update(self):
+        while True:
+            time.sleep(1/60)
+            for particle in self.particles:
+                particle.update()
+
+    def draw(self):
+        for particle in self.particles:
+            particle.draw()
+
+    def __str__(self):
+        return 'Particle system with {} particles'.format(len(self.particles))
